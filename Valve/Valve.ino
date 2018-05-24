@@ -7,6 +7,7 @@
 #include <Wire.h>          //included in Arduino IDE (www.arduino.cc)
 #include "LowPower.h"      //get it here: https://github.com/lowpowerlab/lowpower
                            //writeup here: http://www.rocketscream.com/blog/2011/07/04/lightweight-low-power-arduino-library/
+#include <Time.h>
 
 //*********************************************************************************************
 //************ IMPORTANT SETTINGS - YOU MUST CHANGE/CONFIGURE TO FIT YOUR HARDWARE ************
@@ -140,8 +141,8 @@ void loop()
 {
   bool skipReport = false;
   bool skipSleep = false;
-  //DEBUGln(millis() / 1000 % 60);
-  if (millis() / 1000 % 60 <= 8){ // trigger every minute
+  //DEBUGln(second());
+  if (second() <= 8){ // trigger every minute
 
     if (zoneTimer > 0) zoneTimer--;
 
@@ -194,7 +195,7 @@ void loop()
         skipSleep = false;
     } else if (newSw & 1 == 1 && newSw & 0b111000 > 0){ // DURATION=ON and FREQ=WEEK, 72 or 48
         uint8_t progIdx = newSw >> 3 & 0b111;
-        blinkLED2(2000, 2);
+        blinkLED2(1000, 3);
         if (valveState == 1){
             valveOff((uint8_t)2);
         }
@@ -218,7 +219,7 @@ void loop()
         DEBUG("Setting PerOFF: "); DEBUGln(periodicOff);     
         zoneTimer = 0;
         skipSleep = false;
-        blinkLED2(5000, progIdx+1);
+        blinkLED2(2000, progIdx+1);
     } else if (newSw == 2){ //DURATION=120
         if (valveState == 1){
           valveOff((uint8_t)2);
@@ -302,8 +303,9 @@ void loop()
     DEBUGln("AWAKE");
   } else {
     //TODO: Re-enable
-    delay(8000);
-    //LowPower.powerDown(sleepTime, ADC_OFF, BOD_OFF);
+    //delay(8000);
+    LowPower.powerDown(sleepTime, ADC_OFF, BOD_OFF);
+    adjustTime(8);
     DEBUGln("WAKEUP");
   }
 }
@@ -437,7 +439,6 @@ void reportState(uint8_t eventId){
   uint16_t v = batteryVolts;
   buf[3] = v >> 8 & 0xFF;
   buf[4] = v & 0xFF;
-  //radio.initialize(FREQUENCY,NODEID,NETWORKID);
   radio.sendWithRetry(GATEWAYID, buf, 5, 3);
   DEBUG("Valve state:"); DEBUG(valveState); DEBUGln();
   DEBUG("Switch state:"); DEBUG(switchState); DEBUGln();
